@@ -1,0 +1,25 @@
+# Ham veri (MILK10k görüntüleri + metadata CSV'leri) — herkes kendi makinesine indirir
+data/
+
+# Önbellek: çıkarılmış özellikler (.npz), yeniden boyutlanmış görüntüler (img256/), fold çıktıları
+# Notebook'lar bunları yeniden üretebilir; ~1.6 GB
+outputs/cache/
+
+# Model ağırlıkları
+*.pth
+*.pt
+*.ckpt
+*.safetensors
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Jupyter
+.ipynb_checkpoints/
+
+# İşletim sistemi / editör
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
