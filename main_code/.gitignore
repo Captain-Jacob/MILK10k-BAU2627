@@ -1,5 +1,7 @@
-# Ham veri (MILK10k görüntüleri + metadata CSV'leri) — herkes kendi makinesine indirir
-data/
+# Ham veri (MILK10k görüntüleri) — herkes kendi makinesine indirir.
+# Metadata / ground-truth CSV'leri (~3 MB) repoda tutuluyor: notebook'lar onlarsız çalışmıyor.
+data/*
+!data/MILK10k_*.csv
 
 # Önbellek: çıkarılmış özellikler (.npz), yeniden boyutlanmış görüntüler (img256/), fold çıktıları
 # Notebook'lar bunları yeniden üretebilir; ~1.6 GB

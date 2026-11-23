@@ -28,6 +28,7 @@ Başlangıçtan bu yana kazanç (CV): 0.425 → 0.544 (+0.119).
 |---|---|---|---|---|
 | 2026-10-22 | DINOv2-large (donmuş) + LR · LightGBM · düz ortalama | 0.487 | 0.421 | −0.066 |
 | 2026-10-23 | fine-tuned DINOv2-base + donmuş DINOv2-large + tabular (1/3'er) | 0.544 | **0.511** | −0.033 |
+| 2026-11-23 | aynı üç model; fine-tuned kısım = 5 fold modelinin ortalaması × 8 görünümlü TTA | 0.560 | 0.474 | −0.086 |
 
 Leaderboard referansı (2026-10-22): 1. sıra 0.705, 10. sıra 0.571.
 
@@ -52,6 +53,7 @@ Leaderboard referansı (2026-10-22): 1. sıra 0.705, 10. sıra 0.571.
 | 11 | 2026-10-22 | Tabular özellik mühendisliği | – | 0.432 – 0.435 | −0.018 … −0.020 | 0–1/5 | ❌ |
 | 12 | 2026-10-22 | DINOv2-large + fusion ağırlığı ve C'nin birlikte ayarı | 0.484 | 0.488 | ±0.000 (DINOv2 + ortalamaya göre) | 3/5 | ✅ DINOv2 alındı, ➖ düz ortalama kaldı |
 | 13 | 2026-10-23 | **Fine-tuning:** DINOv2-base (iki görüş) + donmuş DINOv2-large + tabular | 0.527 | **0.544** | **+0.057** | 5/5 | ✅ kabul · test 0.421 → **0.511** |
+| 14 | 2026-11-23 | Fine-tuned'da 8 görünümlü TTA + testte 5 fold modelinin ortalaması (tüm train ile son eğitim yerine) | 0.554 | 0.560 | +0.011 (TTA, aynı modeller) | 4/5 | ❌ test 0.511 → 0.474; 0.511'lik kurulum geri alındı |
 
 ---
 
@@ -204,6 +206,38 @@ ResNet101 layer2+3+4 ile denendi. Görüntünün tamamı en-boy oranı korunarak
   - Tabular model ortalamaya neredeyse hiç katkı vermiyor (0.545'e karşı 0.544). Ama fold sapmasını yarıya indiriyor (0.013 → 0.006), yani sonucu daha kararlı yapıyor.
 - **Not:** Fold modellerinin ve son modelin ağırlıkları kaydedilmedi, sadece tahminleri kaydedildi. TTA veya fold ensemble için modellerin yeniden eğitilmesi gerekir.
 
+### 14 · TTA + 5 fold ensemble (2026-11-23)
+- **Değişiklik:** `common.py`'ye taşıma (davranış aynı), fold ağırlıklarının kaydı (`fold{k}.pt`), fine-tuned tahminlerde 8 görünümlü TTA (4 rotasyon × ayna, iki görüntüye aynı dönüşüm). Testte tüm train ile son eğitim **kaldırıldı**; fine-tuned kısım 5 fold modelinin test tahminlerinin ortalaması oldu.
+- **Ortam:** 5 fold yeniden eğitildi (RTX 5070, gradient checkpointing kapalı, fold başına ~6 dk). Ayarlar #13 ile aynı. DINOv2-large özellik cache'i de yeniden çıkarıldı, bu yüzden donmuş LR 0.4837 yerine 0.4821 (#12'deki TF32 notu).
+
+| Sistem (5-fold OOF) | #13 | #14 |
+|---|---|---|
+| Donmuş DINOv2-large + LR | 0.484 | 0.482 |
+| LightGBM | 0.333 | 0.333 |
+| Fine-tuned, TTA'sız | 0.527 | 0.535 |
+| Fine-tuned, TTA | – | 0.554 |
+| Üçlü, TTA'sız | 0.544 | 0.549 |
+| Üçlü, TTA | – | **0.560** (fold sapması 0.029) |
+
+- **Test (leaderboard):** **0.474**, 0.511'den −0.037. CV düşmedi, aksine her satır #13'e eşit ya da yukarıda. Gerileme CV'nin ölçmediği yerde: testteki fine-tuned model.
+- **Teşhis (cache'teki tahminlerle, eğitim yapmadan):**
+  - Kodda hata bulunmadı. Sınıf sırası, lezyon hizalaması, TTA boyutları (`(B, C, H, W)`, 224 ortadan kırpma, normalizasyon sonrası döndürme) doğru. Gönderilen `test_probabilities.csv` cache'ten birebir yeniden üretildi (max fark 1e-16).
+  - CV'de her lezyonu **tek** bir fold modeli tahmin ediyor. Testte ise 5 modelin ortalaması kullanıldı; bu kurulumun CV karşılığı yok.
+  - Test tahminleri 0.511'lik gönderimden 479 lezyonun 48'inde (%10) farklı. Nadir sınıf tahminleri azaldı: BEN_OTH 1 → 0, BEN_OTH/DF/INF/MAL_OTH/VASC toplamı 23 → 18, BKL 91 → 73. Tek tek fold modelleri BEN_OTH'a 0–2 kez diyor, ortalamaları hiç demiyor. Testte ~4 BEN_OTH olduğu düşünülürse tek bir doğru BEN_OTH tahmini macro-F1'de ~0.03 eder.
+  - Aynı ayarlarla eğitilmiş iki fold modeli test lezyonlarının sadece %88'inde aynı sınıfı söylüyor. Yani tek bir eğitim koşusu bile testte birkaç puan oynatabilir.
+  - **Leaderboard gürültüsü:** OOF tahminlerinden rastgele 479 lezyon seçilince macro-F1'in sapması **0.045**, aynı alt kümede iki sistemin farkının sapması ~0.02. −0.037'nin bir kısmı gürültü olabilir; leaderboard ±0.01'lik değişiklikleri ayırt edemez.
+- **Karar:** Varsayılan test kurulumu 0.511'linkine döndü: `TEST_MODEL = "full"` (tüm train ile tek model, `full.pt`), `TTA = False`. Diğer kombinasyonlar `outputs/finetune/variants/` altına yazılıyor. 0.511 alan orijinal dosya `variants/submission_original_lb0511.csv` (git `f3a0bd61`'den).
+- **Aynı gün iç içe CV ile (cache'teki OOF üzerinde) denenenler:**
+
+| Yöntem | Üçlü TTA'sız (0.549) | Üçlü TTA (0.560) |
+|---|---|---|
+| Öğrenilmiş karışım ağırlıkları (simpleks, 0.1 adım) | +0.003, 3/5 | +0.009, 4/5 (her fold ≈ 0.4 / 0.3 / 0.3 seçti) |
+| Tek parametreli öncül düzeltmesi `p / prior^τ` | −0.002, 2/5 | +0.006, 3/5 |
+| Ortak sıcaklık (ortalamadan önce `p^(1/T)`) | +0.008, 4/5 (T=3) | −0.010, 0/5 |
+| Sınıf başına log-bias (#10 tekrarı) | +0.002, 3/5 (aynı veride 0.566) | −0.008, 1/5 (aynı veride 0.573) |
+
+  Hiçbiri kabul kuralını (≥ +0.01 ve fold'ların çoğu) geçmiyor. Genel ders 1 hâlâ geçerli: üst katman ayarları tıkalı, kazanç görüntü modelinden gelmeli.
+
 ---
 
 ## Genel dersler
@@ -211,13 +245,14 @@ ResNet101 layer2+3+4 ile denendi. Görüntünün tamamı en-boy oranı korunarak
 2. **`class_weight="balanced"` macro-F1 için şart.** Ağırlıksız eğitim fusion skorunu 0.085 düşürdü.
 3. **Veriden öğrenilen her ayar iç içe CV ile ölçülmeli.** Karar eşiklerinde aynı veride ölçülen skor ile gerçek skor arasında 0.034 fark çıktı.
 4. **MAL_OTH (9 örnek) hiçbir yöntemle öğrenilemedi.** Her sınıf skorun 1/11'i olduğu için pratikteki tavan yaklaşık 0.91.
+5. **Test tahmini CV'de ölçülen modelle aynı olmalı ya da leaderboard'da ayrıca doğrulanmalı.** #14'te CV +0.016 yükseldi ama test 0.037 düştü: testte kullanılan 5 model ortalamasının CV karşılığı yoktu. 479 lezyonluk leaderboard'un gürültüsü (σ ≈ 0.045) küçük farkları ayırt edemez.
 
 ## Açık kararlar / sıradakiler
 - [x] DINOv2-large notebook'a alındı (0.452 → 0.487).
 - [x] DINOv2 ile fusion ağırlığı iç içe CV ile yeniden ayarlandı → kazanç yok, düz ortalama kaldı.
 - [x] Fine-tuning (DINOv2-base) → CV 0.544, test 0.511.
 - [ ] Leaderboard ilk 10 için (0.571) testte yaklaşık +0.06 gerekiyor. Adaylar:
-  - Fine-tuned modellerde TTA ve fold ensemble (model ağırlıklarının kaydedilmesi gerekiyor).
+  - ~~Fine-tuned modellerde TTA ve fold ensemble~~ → #14: CV 0.560 ama test 0.474. TTA'yı tek başına (`variants/submission_full_tta.csv`) leaderboard'da denemek açık.
   - Farklı bir fine-tuned backbone ile çeşitlilik.
   - Daha yüksek çözünürlük.
   - Nadir sınıflar için yöntemler.
