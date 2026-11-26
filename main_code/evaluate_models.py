@@ -149,7 +149,7 @@ def resnet_features(name, train):
     if cache.exists():
         with np.load(cache) as z:
             assert (z["lesion_id"] == ids).all(), f"stale cache, delete {cache}"
-            return z["X"] if "X" in z.files else np.hstack([z[l] for l in LAYERS])
+            return z["X"]
     print(f"extracting {name} features ({2 * len(train)} images)...", flush=True)
     model, transform, embed = load_resnet(name)
     loader = DataLoader(ImageDataset(train["clin"].tolist() + train["derm"].tolist(), transform), batch_size=32,

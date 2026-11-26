@@ -9,6 +9,14 @@ Produced by `main_code/evaluate_models.py`. Run from the repository root (GPU re
 All models are scored **out-of-fold (OOF)** on the 5240 training lesions with the same split:
 `StratifiedKFold(5, shuffle=True, random_state=42)` at lesion level (`common.make_folds`).
 
+## Last verified run
+
+2026‑11‑26 20:21, RTX 5070, from the existing caches (106 s, nothing fine‑tuned). Compared with the previous run of the same day (11:09):
+
+- **Identical:** `criteria.csv`, `per_class_metrics.csv`, `fold_metrics.csv`, `model_complexity.csv`, `component_sizes.csv`, all 36 files in `confusion_matrices/`, all 9 files in `oof_predictions/`, and in `decision_matrix.csv` every column except inference time.
+- **Changed:** latency only (`latency_summary.csv`, `latency_stages.csv`, the inference‑time column) and the timestamp in `run_info.json`. Per‑model means are 0.0–3.8 % lower; the speed ranking is the same.
+- **Checks in `run_info.json`** have the same values as before. Not all are exact matches: see "Frozen DINOv2‑L" and "Fine‑tuned model and image preprocessing" below.
+
 ## Files
 
 | File | Content |
@@ -22,6 +30,7 @@ All models are scored **out-of-fold (OOF)** on the 5240 training lesions with th
 | `latency_summary.csv`, `latency_stages.csv` | Latency per model (mean, median, p95, std, per-repeat mean) and per pipeline stage |
 | `model_complexity.csv`, `component_sizes.csv` | Size and parameter counts per model and per component |
 | `run_info.json` | Hardware, library versions, settings and cache consistency checks |
+| `TECHNICAL_NOTES_FOR_TEAM.md` | Hand‑written Q&A for the analysis team: inputs, preprocessing, training, MONET, metadata, limitations. Not produced by the script; update it by hand after a new run |
 
 ## How the criteria are defined
 
@@ -31,7 +40,8 @@ All models are scored **out-of-fold (OOF)** on the 5240 training lesions with th
   and the metadata row to the 11 probabilities, with a warm OS file cache. It is the sum of the stages a model
   needs, so the image decode/resize shared by DINOv2-large and TwoViewDino is counted once. Frozen backbones run
   in fp32 (as in 01), TwoViewDino in fp16 autocast with the 8 TTA views run one after another (as in 02).
-  The cost of averaging probabilities is not counted. Absolute values depend on this machine; see `run_info.json`.
+  The cost of averaging probabilities is not counted. Absolute values depend on this machine (see `run_info.json`)
+  and shift by a few percent between runs.
 - **Model size** (decimal MB) is the disk size of the files one prediction needs: pretrained backbone weights,
   fitted classifier (`joblib`, mean over the 5 fold models) and/or one `fold{k}.pt`.
 - **Parameter count**: all network parameters plus LogReg coefficients and intercepts. For LightGBM it is the

@@ -258,3 +258,47 @@ ResNet101 layer2+3+4 ile denendi. Görüntünün tamamı en-boy oranı korunarak
   - Nadir sınıflar için yöntemler.
   - Dış veri (yarışma kurallarına bakılmalı).
 - [ ] Tabular modelin katkısı çok küçük. Kararlılık için tutuluyor; güçlendirilmesi düşük öncelikli.
+
+---
+
+## 15 · Temizlik, MCDM değerlendirmesinin doğrulanması ve kilitlenen sonuçlar (2026-11-26)
+Yeni deney yok; model eğitilmedi.
+
+- **Temizlik:**
+  - Eski EfficientNet-B0 hattının `checkpoints/` altındaki 5 ağırlık dosyası çalışma klasöründen silindi (git geçmişinde `91f9cf46` commit'inde duruyor).
+  - `01_baseline.ipynb` ve `evaluate_models.py`'deki katman katman eski ResNet cache okuma yolu kaldırıldı.
+  - `requirements.txt`'ye `joblib`, `huggingface_hub`, `matplotlib` eklendi.
+  - İki notebook'un kayıtlı çıktılarındaki Windows kullanıcı adı `user` ile değiştirildi (6 yer; kod hücreleri aynı). Yerel `D:\…` yolları duruyor.
+- **Doğrulama:** `evaluate_models.py` depo kökünden, mevcut cache'lerle çalıştırıldı (RTX 5070, 106 sn, `HF_HUB_OFFLINE=1`, `--allow-download` olmadan). Aynı günkü 11:09 koşusuyla karşılaştırıldı.
+  - **Birebir aynı:** `outputs/mcdm/`'deki 52 dosya (`criteria`, `per_class_metrics`, `fold_metrics`, `model_complexity`, `component_sizes`, 36 confusion matrix dosyası, 9 OOF dosyası, iki `.md`). `decision_matrix.csv`'de beş sınıflandırma metriği, boyut ve parametre sayısı aynı. (`.md` dosyaları script tarafından üretilmiyor; koşudan sonra elle güncellendi.)
+  - **Değişen:** sadece latency (`latency_summary.csv`, `latency_stages.csv`, karar matrisindeki süre sütunu) ve `run_info.json`'daki zaman damgası.
+  - OOF dosyalarından yeniden hesaplanan pooled ve fold metrikleri tablolarla uyuşuyor (en büyük fark 1e-16); confusion matrix'ler aynı.
+  - `outputs/finetune/` ve `outputs/baseline/` değişmedi. `submission.csv` hâlâ `variants/submission_original_lb0511.csv` ile bayt bayt aynı. `02_finetune`'un son eğitim hücresi çalıştırılmadı (`full.pt` yok). Notebook'lar temizlikten sonra yeniden çalıştırılmadı.
+- **Cache kontrolleri** (`run_info.json`; değerler önceki koşuyla aynı):
+
+| Kontrol | Sonuç |
+|---|---|
+| `fold{k}.pt` ile yeniden tahmin ↔ `fold{k}.npz` (fold başına 64 lezyon) | max fark 0.0 |
+| `cv_results.csv` ↔ yeniden hesaplanan macro-F1 (4 sistem) | fark 0 (üçlü TTA da aynı: 0.5598) |
+| LightGBM yeniden fit ↔ `reference.npz` | max fark 0.0 |
+| Donmuş LR yeniden fit ↔ `reference.npz` | **tam aynı değil:** 11 lezyonda farklı sınıf (%99.8 uyum), max olasılık farkı 0.033; macro-F1 0.4822 ↔ 0.4821. Metrikler cache'ten. |
+| Ham görüntüden zamanlanan hat ↔ OOF (200 lezyon) | **tam aynı değil:** fine-tuned %96.5 (TTA %97), ResNet101 %99.5, diğerleri %100. Fine-tuned farkının sebebi `img256` JPEG yeniden kaydı (`TECHNICAL_NOTES_FOR_TEAM.md` bölüm 4). |
+
+- **Kilitlenen sonuçlar** (5240 lezyon, OOF; süre = lezyon başına ortalama ms):
+
+| `model_id` | Macro-F1 | Accuracy | Balanced acc. | Weighted F1 | Macro AUC | ms (önceki → son) | MB |
+|---|--:|--:|--:|--:|--:|--:|--:|
+| `tabular_lgbm` | 0.3334 | 0.6120 | 0.3265 | 0.6044 | 0.8423 | 2.8 → 2.8 | 5.8 |
+| `frozen_resnet50_logreg` | 0.4274 | 0.6435 | 0.4658 | 0.6571 | 0.8635 | 11.8 → 11.4 | 103.0 |
+| `frozen_resnet101_logreg` | 0.4269 | 0.6391 | 0.4641 | 0.6517 | 0.8483 | 16.7 → 16.1 | 179.3 |
+| `frozen_dinov2l_logreg` | 0.4821 | 0.7082 | 0.4732 | 0.7086 | 0.9080 | 33.3 → 33.0 | 1217.8 |
+| `late_fusion` | 0.4867 | 0.7273 | 0.4615 | 0.7190 | 0.9099 | 36.2 → 35.8 | 1223.6 |
+| `ft_dinov2b` | 0.5350 | 0.7578 | 0.5379 | 0.7581 | 0.9088 | 16.0 → 15.6 | 346.5 |
+| `ft_dinov2b_tta` | 0.5543 | 0.7687 | 0.5479 | 0.7678 | 0.9146 | 60.5 → 58.4 | 346.5 |
+| `ensemble` | 0.5492 | 0.7781 | 0.5244 | 0.7712 | 0.9304 | 44.9 → 44.4 | 1570.1 |
+| `ensemble_tta` | 0.5598 | 0.7821 | 0.5308 | 0.7746 | 0.9322 | 89.3 → 87.2 | 1570.1 |
+
+- **Leaderboard:** en iyi skor hâlâ **0.511** (#13). Bu koşu leaderboard'u ölçmez; #13'ün ağırlıkları kaydedilmediği için 0.544 de yeniden hesaplanamaz.
+- **Önceki kayıtlara notlar:**
+  - #14'teki "%88 uyum", fine-tuned kısmı farklı fold modelinden gelen üçlü ensemble'lar (TTA'sız) için doğru (ikili ortalama 0.880). Fine-tuned modeller tek başına %79 uyuşuyor.
+  - #14'teki "fold başına ~6 dk" yerine, kayıtlı notebook çıktısında 5 fold toplam 35 dk (fold başına ~7 dk).

@@ -1,4 +1,4 @@
-# Dependencies for notebooks/01_baseline.ipynb and notebooks/02_finetune.ipynb.
+# Dependencies for notebooks/01_baseline.ipynb, notebooks/02_finetune.ipynb and evaluate_models.py.
 # Install a CUDA build of torch/torchvision that matches your GPU first (see README.md).
 torch>=2.1
 torchvision>=0.16
@@ -9,4 +9,7 @@ pandas>=2.0
 numpy>=1.24
 pillow>=10.0
 tqdm>=4.66
+joblib>=1.2
+huggingface_hub
+matplotlib>=3.7
 jupyter
