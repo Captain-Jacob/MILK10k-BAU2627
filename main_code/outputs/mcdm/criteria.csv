@@ -1,0 +1,9 @@
+criterion,direction
+Macro_F1,benefit
+Accuracy,benefit
+Balanced_Accuracy,benefit
+Weighted_F1,benefit
+Macro_ROC_AUC,benefit
+Inference_Time_ms_per_lesion,cost
+Model_Size_MB,cost
+Parameter_Count,cost

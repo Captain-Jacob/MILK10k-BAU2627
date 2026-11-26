@@ -1,0 +1,141 @@
+{
+  "created": "2026-11-26 11:09:45",
+  "gpu": "NVIDIA GeForce RTX 5070",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "processor": "AMD64 Family 25 Model 97 Stepping 2, AuthenticAMD",
+  "versions": {
+    "python": "3.13.7",
+    "torch": "2.14.1+cu130",
+    "torchvision": "0.29.1+cu130",
+    "transformers": "5.23.0",
+    "scikit-learn": "1.9.1",
+    "lightgbm": "4.7.0",
+    "numpy": "2.5.4",
+    "pandas": "3.0.6"
+  },
+  "split": "StratifiedKFold(5, shuffle=True, random_state=42), lesion level (common.make_folds)",
+  "n_lesions": 5240,
+  "skipped_models": [],
+  "resnet_logreg_C": 0.001,
+  "timing": {
+    "lesions": 200,
+    "repeats": 3,
+    "batch_size": 1,
+    "fold_model": 0
+  },
+  "checks": {
+    "refit_vs_reference_npz": {
+      "lgbm": {
+        "max_abs_diff": 0.0,
+        "argmax_agreement": 1.0
+      },
+      "dinov2l": {
+        "max_abs_diff": 0.03290635347366333,
+        "argmax_agreement": 0.9979007633587786
+      }
+    },
+    "macro_f1_vs_02_cv_results": {
+      "late_fusion": {
+        "recorded": 0.4867333800903645,
+        "recomputed": 0.48673338009036454
+      },
+      "ft_dinov2b": {
+        "recorded": 0.5350156215891011,
+        "recomputed": 0.5350156215891011
+      },
+      "ft_dinov2b_tta": {
+        "recorded": 0.5543443389666514,
+        "recomputed": 0.5543443389666514
+      },
+      "ensemble": {
+        "recorded": 0.5491970747389762,
+        "recomputed": 0.5491970747389762
+      }
+    },
+    "checkpoint_vs_fold_npz": [
+      {
+        "fold": 0,
+        "n": 64,
+        "train_config": {
+          "epochs": 10,
+          "batch": 16,
+          "lr_backbone": 1e-05,
+          "lr_head": 0.001,
+          "max_steps": null,
+          "seed": 42
+        },
+        "max_abs_diff": 0.0,
+        "argmax_agreement_notta": 1.0,
+        "argmax_agreement_tta": 1.0
+      },
+      {
+        "fold": 1,
+        "n": 64,
+        "train_config": {
+          "epochs": 10,
+          "batch": 16,
+          "lr_backbone": 1e-05,
+          "lr_head": 0.001,
+          "max_steps": null,
+          "seed": 42
+        },
+        "max_abs_diff": 0.0,
+        "argmax_agreement_notta": 1.0,
+        "argmax_agreement_tta": 1.0
+      },
+      {
+        "fold": 2,
+        "n": 64,
+        "train_config": {
+          "epochs": 10,
+          "batch": 16,
+          "lr_backbone": 1e-05,
+          "lr_head": 0.001,
+          "max_steps": null,
+          "seed": 42
+        },
+        "max_abs_diff": 0.0,
+        "argmax_agreement_notta": 1.0,
+        "argmax_agreement_tta": 1.0
+      },
+      {
+        "fold": 3,
+        "n": 64,
+        "train_config": {
+          "epochs": 10,
+          "batch": 16,
+          "lr_backbone": 1e-05,
+          "lr_head": 0.001,
+          "max_steps": null,
+          "seed": 42
+        },
+        "max_abs_diff": 0.0,
+        "argmax_agreement_notta": 1.0,
+        "argmax_agreement_tta": 1.0
+      },
+      {
+        "fold": 4,
+        "n": 64,
+        "train_config": {
+          "epochs": 10,
+          "batch": 16,
+          "lr_backbone": 1e-05,
+          "lr_head": 0.001,
+          "max_steps": null,
+          "seed": 42
+        },
+        "max_abs_diff": 0.0,
+        "argmax_agreement_notta": 1.0,
+        "argmax_agreement_tta": 1.0
+      }
+    ],
+    "timed_pipeline_vs_oof_argmax_agreement": {
+      "frozen_dinov2l_logreg": 1.0,
+      "ft": 0.965,
+      "ft_tta": 0.97,
+      "tabular_lgbm": 1.0,
+      "resnet50": 1.0,
+      "resnet101": 0.995
+    }
+  }
+}

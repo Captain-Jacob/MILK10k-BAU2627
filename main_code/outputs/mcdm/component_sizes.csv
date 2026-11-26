@@ -1,0 +1,9 @@
+component,size_MB,parameters,fitted_parameters,note
+lgbm,5.7862616,95699,95699,"3300 trees; leaf values + split thresholds, mean of 5 fold models (joblib)"
+dinov2l_head,0.280053,45067,45067,StandardScaler + LogisticRegression (joblib); scaler statistics not counted
+resnet50_head,0.488949,78859,78859,StandardScaler + LogisticRegression (joblib); scaler statistics not counted
+resnet101_head,0.488949,78859,78859,StandardScaler + LogisticRegression (joblib); scaler statistics not counted
+dinov2l_backbone,1217.522888,304368640,0,"frozen pretrained, model.safetensors"
+resnet50_backbone,102.530333,23508032,0,"frozen pretrained, torchvision .pth (file includes the unused fc layer)"
+resnet101_backbone,178.793939,42500160,0,"frozen pretrained, torchvision .pth (file includes the unused fc layer)"
+finetuned,346.544139,86614283,86614283,"one fold{k}.pt (a single TwoViewDino, as scored by the OOF predictions)"

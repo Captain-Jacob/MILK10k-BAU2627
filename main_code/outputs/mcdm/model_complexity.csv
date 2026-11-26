@@ -1,0 +1,10 @@
+model_id,Model,Model_Size_MB,Parameter_Count,Fitted_on_MILK10k_Parameter_Count,components
+tabular_lgbm,Tabular only (LightGBM),5.7862616,95699,95699,lgbm
+frozen_dinov2l_logreg,Frozen DINOv2-L + LogReg,1217.802941,304413707,45067,dinov2l_backbone + dinov2l_head
+frozen_resnet50_logreg,Frozen ResNet50 + LogReg,103.019282,23586891,78859,resnet50_backbone + resnet50_head
+frozen_resnet101_logreg,Frozen ResNet101 + LogReg,179.282888,42579019,78859,resnet101_backbone + resnet101_head
+late_fusion,Late fusion (0.5 frozen DINOv2-L + 0.5 LightGBM),1223.5892026,304509406,140766,dinov2l_backbone + dinov2l_head + lgbm
+ft_dinov2b,Fine-tuned TwoViewDino (no TTA),346.544139,86614283,86614283,finetuned
+ft_dinov2b_tta,Fine-tuned TwoViewDino (8-view TTA),346.544139,86614283,86614283,finetuned
+ensemble,Full ensemble (no TTA),1570.1333416,391123689,86755049,finetuned + dinov2l_backbone + dinov2l_head + lgbm
+ensemble_tta,Full ensemble (8-view TTA),1570.1333416,391123689,86755049,finetuned + dinov2l_backbone + dinov2l_head + lgbm
